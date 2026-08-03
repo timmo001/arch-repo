@@ -96,9 +96,7 @@ jobs:
           mkdir -p candidate-packages
           cp "${candidates[@]}" candidate-packages/
       - name: Install R2 client
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes awscli
+        run: pipx install awscli==1.45.63
       - name: Download current repository state
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

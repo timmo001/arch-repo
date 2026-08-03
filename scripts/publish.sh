@@ -105,8 +105,8 @@ done
 
 repo-add --include-sigs "$ARCH_REPO_OUTPUT_DIR/$repository.db.tar.zst" \
   "${active_files[@]}"
-ln -s "$repository.db.tar.zst" "$ARCH_REPO_OUTPUT_DIR/$repository.db"
-ln -s "$repository.files.tar.zst" "$ARCH_REPO_OUTPUT_DIR/$repository.files"
+ln -sfn "$repository.db.tar.zst" "$ARCH_REPO_OUTPUT_DIR/$repository.db"
+ln -sfn "$repository.files.tar.zst" "$ARCH_REPO_OUTPUT_DIR/$repository.files"
 
 if [[ -s "$ARCH_REPO_STATE_DIR/recovery/current.json" ]]; then
   cp "$ARCH_REPO_STATE_DIR/recovery/current.json" \

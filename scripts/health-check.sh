@@ -35,7 +35,7 @@ jq -e '
     (.filename | test("^[^/]+\\.pkg\\.tar\\.zst$")) and
     (.sha256 | test("^[a-f0-9]{64}$")) and
     (.signatureSha256 | test("^[a-f0-9]{64}$")) and
-    (.sourceSha | test("^[a-f0-9]{40}$"))))
+    (.sourceSha | test("^[a-f0-9]{40}$")))
 ' "$work/current.json" >/dev/null
 [[ "$(jq -r '.signingFingerprint' "$work/current.json")" == \
   "$(normalised_fingerprint)" ]] || {

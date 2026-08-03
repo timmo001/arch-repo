@@ -18,8 +18,8 @@ export GNUPGHOME="$gnupg"
 import_signing_key "$ARCH_REPO_SIGNING_KEY"
 
 repo-add "$work/$repository.db.tar.zst"
-ln -s "$repository.db.tar.zst" "$work/$repository.db"
-ln -s "$repository.files.tar.zst" "$work/$repository.files"
+ln -sfn "$repository.db.tar.zst" "$work/$repository.db"
+ln -sfn "$repository.files.tar.zst" "$work/$repository.files"
 mkdir -p "$work/recovery"
 jq -n \
   --arg repository "$repository" \

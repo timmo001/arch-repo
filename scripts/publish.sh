@@ -28,6 +28,8 @@ rm -rf "$ARCH_REPO_OUTPUT_DIR"
 mkdir -p "$ARCH_REPO_OUTPUT_DIR/recovery"
 cp -a "$ARCH_REPO_STATE_DIR"/*.pkg.tar.zst \
   "$ARCH_REPO_OUTPUT_DIR/" 2>/dev/null || true
+cp -a "$ARCH_REPO_STATE_DIR"/*.pkg.tar.zst.sig \
+  "$ARCH_REPO_OUTPUT_DIR/" 2>/dev/null || true
 cp -a "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst \
   "$ARCH_REPO_OUTPUT_DIR/"
 
@@ -100,6 +102,14 @@ while IFS= read -r pkgname; do
 done < <(jq -r '.packages | keys[]' "$PACKAGE_CONFIG")
 
 for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
+  [[ -s "$package_file.sig" || -e "$ARCH_REPO_CANDIDATE_DIR/${package_file##*/}" ]] || {
+    printf 'Retained package signature is missing: %s.sig\n' "${package_file##*/}" >&2
+    exit 1
+  }
+done
+
+for package_file in "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst; do
+  package_file="$ARCH_REPO_OUTPUT_DIR/${package_file##*/}"
   sign_file "$package_file"
 done
 

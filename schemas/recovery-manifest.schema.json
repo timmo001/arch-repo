@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "repository", "architecture", "generatedAt", "signingFingerprint", "packages"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "repository": { "const": "timmo" },
+    "architecture": { "const": "x86_64" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "workflowRun": { "type": ["string", "null"] },
+    "signingFingerprint": { "pattern": "^[A-F0-9]{40}$" },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pkgname", "pkgver", "arch", "filename", "sha256", "signature", "signatureSha256", "active", "sourceRepository", "sourceSha"],
+        "properties": {
+          "pkgname": { "pattern": "^[a-z0-9@_+][a-z0-9@._+-]*$" },
+          "pkgver": { "type": "string", "minLength": 1 },
+          "arch": { "enum": ["x86_64", "any"] },
+          "filename": { "pattern": "^[^/]+\\.pkg\\.tar\\.zst$" },
+          "sha256": { "pattern": "^[a-f0-9]{64}$" },
+          "signature": { "pattern": "^[^/]+\\.pkg\\.tar\\.zst\\.sig$" },
+          "signatureSha256": { "pattern": "^[a-f0-9]{64}$" },
+          "active": { "type": "boolean" },
+          "sourceRepository": { "pattern": "^timmo001/[A-Za-z0-9._-]+$" },
+          "sourceSha": { "pattern": "^[a-f0-9]{40}$" }
+        }
+      }
+    }
+  }
+}

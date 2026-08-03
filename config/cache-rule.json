@@ -1,0 +1,8 @@
+{
+  "ref": "timmo-arch-repo-cache",
+  "description": "Cache public pacman repository objects",
+  "expression": "(http.host eq \"packages.timmo.dev\")",
+  "action": "set_cache_settings",
+  "action_parameters": { "cache": true },
+  "enabled": true
+}

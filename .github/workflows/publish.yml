@@ -1,0 +1,201 @@
+---
+name: Publish package
+
+# yamllint disable-line rule:truthy
+on:
+  repository_dispatch:
+    types: [publish-package]
+  workflow_dispatch:
+    inputs:
+      source-repository:
+        description: Allowlisted source repository
+        required: true
+        type: string
+      source-sha:
+        description: Exact source commit SHA
+        required: true
+        type: string
+      source-run-id:
+        description: Source workflow run containing the candidate artifact
+        required: true
+        type: string
+      artifact-name:
+        description: Validated candidate artifact name
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Wait for earlier publishes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          while [[ $(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/runs" \
+            --field per_page=100 \
+            --jq "any(.workflow_runs[]; .id < ($RUN_ID | tonumber) and \
+              (.status == \"queued\" or .status == \"in_progress\"))") \
+            == true ]]; do
+            echo "Waiting for an earlier publish"
+            sleep 15
+          done
+      - uses: actions/checkout@v7
+      - name: Validate dispatch contract
+        id: contract
+        env:
+          ARTIFACT_NAME: ${{ github.event.client_payload.artifact_name || inputs.artifact-name }}
+          GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.source_repository || inputs.source-repository }}
+          SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id || inputs.source-run-id }}
+          SOURCE_SHA: ${{ github.event.client_payload.source_sha || inputs.source-sha }}
+        run: |
+          [[ "$SOURCE_REPOSITORY" =~ ^timmo001/[A-Za-z0-9._-]+$ ]]
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_NAME" =~ ^[A-Za-z0-9._-]+$ ]]
+          jq -e --arg repository "$SOURCE_REPOSITORY" \
+            'any(.packages[]; .repository == $repository)' \
+            config/packages.json
+          actual_sha="$(gh api --method GET \
+            "repos/$SOURCE_REPOSITORY/actions/runs/$SOURCE_RUN_ID" \
+            --jq .head_sha)"
+          [[ "$actual_sha" == "$SOURCE_SHA" ]] || {
+            echo "Source run SHA does not match dispatch SHA" >&2
+            exit 1
+          }
+          {
+            echo "artifact_name=$ARTIFACT_NAME"
+            echo "source_repository=$SOURCE_REPOSITORY"
+            echo "source_run_id=$SOURCE_RUN_ID"
+            echo "source_sha=$SOURCE_SHA"
+          } >> "$GITHUB_OUTPUT"
+      - name: Download validated candidate
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
+        run: |
+          gh run download "${{ steps.contract.outputs.source_run_id }}" \
+            --repo "${{ steps.contract.outputs.source_repository }}" \
+            --name "${{ steps.contract.outputs.artifact_name }}" \
+            --dir candidate
+      - name: Validate candidate contents
+        run: |
+          shopt -s globstar nullglob
+          candidates=(candidate/**/*.pkg.tar.zst)
+          (( ${#candidates[@]} > 0 )) || {
+            echo "Candidate artifact contains no packages" >&2
+            exit 1
+          }
+          mkdir -p candidate-packages
+          cp "${candidates[@]}" candidate-packages/
+      - name: Install R2 client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes awscli
+      - name: Download current repository state
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          mkdir -p state
+          aws s3 sync "s3://$R2_BUCKET/x86_64/" state/ \
+            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+            --no-progress
+      - name: Prepare signed repository state
+        env:
+          ARCH_REPO_SIGNING_KEY: ${{ github.workspace }}/.work/signing-key.asc
+          ARCH_REPO_SIGNING_PASSPHRASE: ${{ secrets.ARCH_REPO_SIGNING_PASSPHRASE }}
+          ARCH_REPO_CANDIDATE_DIR: ${{ github.workspace }}/candidate-packages
+          ARCH_REPO_STATE_DIR: ${{ github.workspace }}/state
+          ARCH_REPO_OUTPUT_DIR: ${{ github.workspace }}/output
+          ARCH_REPO_EXPECTED_SOURCE_REPOSITORY: ${{ steps.contract.outputs.source_repository }}
+          ARCH_REPO_SOURCE_SHA: ${{ steps.contract.outputs.source_sha }}
+          SIGNING_KEY: ${{ secrets.ARCH_REPO_SIGNING_KEY }}
+        run: |
+          mkdir -p .work
+          printf '%s\n' "$SIGNING_KEY" > "$ARCH_REPO_SIGNING_KEY"
+          chmod 0600 "$ARCH_REPO_SIGNING_KEY"
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/repository" \
+            --workdir /repository \
+            --env ARCH_REPO_CANDIDATE_DIR=/repository/candidate-packages \
+            --env ARCH_REPO_STATE_DIR=/repository/state \
+            --env ARCH_REPO_OUTPUT_DIR=/repository/output \
+            --env ARCH_REPO_EXPECTED_SOURCE_REPOSITORY \
+            --env ARCH_REPO_SOURCE_SHA \
+            --env ARCH_REPO_SIGNING_PASSPHRASE \
+            --env ARCH_REPO_SIGNING_KEY=/repository/.work/signing-key.asc \
+            archlinux:latest \
+            bash -euo pipefail -c '
+              pacman -Syu --noconfirm --needed gnupg jq pacman-contrib
+              bash scripts/publish.sh
+              chown -R '"$(id -u):$(id -g)"' output
+            '
+          rm -f "$ARCH_REPO_SIGNING_KEY"
+      - name: Upload immutable packages first
+        env: &r2
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          for file in output/*.pkg.tar.zst output/*.pkg.tar.zst.sig; do
+            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/${file##*/}" \
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+              --cache-control "public, max-age=31536000, immutable" \
+              --no-progress
+          done
+      - name: Upload recovery manifests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          for file in output/recovery/*; do
+            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/recovery/${file##*/}" \
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+              --cache-control "public, max-age=60, s-maxage=300, must-revalidate" \
+              --no-progress
+          done
+      - name: Upload repository database last
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          for file in output/timmo.files.tar.zst output/timmo.files output/timmo.db.tar.zst output/timmo.db; do
+            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/${file##*/}" \
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+              --cache-control "public, max-age=60, s-maxage=300, must-revalidate" \
+              --no-progress
+          done
+      - name: Verify public repository
+        run: bash scripts/health-check.sh
+      - name: Prune objects absent from verified state
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          aws s3 sync output/ "s3://$R2_BUCKET/x86_64/" \
+            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+            --delete \
+            --exclude 'recovery/*' \
+            --no-progress

@@ -1,0 +1,12 @@
+node_modules/
+.work/
+dist/
+.env
+.env.*
+*.pkg.tar.*
+*.sig
+*.part
+.gnupg/
+.wrangler/
+
+!keys/*.asc

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "packages": {
+    "context-bin": { "repository": "timmo001/context", "architectures": ["x86_64"] },
+    "context-git": { "repository": "timmo001/context", "architectures": ["x86_64"] },
+    "float-app-bin": { "repository": "timmo001/float-app", "architectures": ["x86_64"] },
+    "float-app-git": { "repository": "timmo001/float-app", "architectures": ["x86_64"] },
+    "go-automate-git": { "repository": "timmo001/go-automate", "architectures": ["x86_64"] },
+    "home-assistant-tui-bin": { "repository": "timmo001/home-assistant-tui", "architectures": ["x86_64"] },
+    "home-assistant-tui-git": { "repository": "timmo001/home-assistant-tui", "architectures": ["x86_64"] },
+    "music-assistant-tui": { "repository": "timmo001/music-assistant-tui", "architectures": ["x86_64"] },
+    "music-assistant-tui-git": { "repository": "timmo001/music-assistant-tui", "architectures": ["x86_64"] },
+    "repo-notes-bin": { "repository": "timmo001/notes", "architectures": ["x86_64"] },
+    "repo-notes-git": { "repository": "timmo001/notes", "architectures": ["x86_64"] },
+    "system-bridge": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] },
+    "system-bridge-git": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] }
+  }
+}

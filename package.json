@@ -1,0 +1,16 @@
+{
+  "name": "@timmo001/arch-repo",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "check": "node scripts/validate-config.mjs && bash scripts/validate.sh",
+    "bootstrap": "bash scripts/bootstrap-repository.sh",
+    "health": "bash scripts/health-check.sh",
+    "provision:check": "bash scripts/provision.sh --check",
+    "provision:apply": "bash scripts/provision.sh --apply"
+  },
+  "devDependencies": {
+    "wrangler": "^4.111.0"
+  }
+}

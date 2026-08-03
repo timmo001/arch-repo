@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "repository": "timmo",
+  "bucket": "timmo001-arch-repo",
+  "hostname": "packages.timmo.dev",
+  "architectures": ["x86_64"],
+  "retainedVersions": 2,
+  "publicDevelopmentUrl": false,
+  "storageClass": "Standard"
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packages"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "packages": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z0-9@_+][a-z0-9@._+-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["repository", "architectures"],
+        "properties": {
+          "repository": { "type": "string", "pattern": "^timmo001/[A-Za-z0-9._-]+$" },
+          "architectures": {
+            "type": "array",
+            "items": { "enum": ["x86_64"] },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

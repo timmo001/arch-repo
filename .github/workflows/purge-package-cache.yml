@@ -1,0 +1,41 @@
+---
+name: Purge package cache
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+    inputs:
+      package-filename:
+        description: Exact package filename to purge with its signature
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Validate package filename
+        env:
+          PACKAGE_FILENAME: ${{ inputs.package-filename }}
+        run: |
+          [[ "$PACKAGE_FILENAME" =~ ^[A-Za-z0-9@._+:-]+\.pkg\.tar\.zst$ ]]
+      - name: Purge package and signature URLs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          PACKAGE_FILENAME: ${{ inputs.package-filename }}
+        run: |
+          response="$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -cn --arg filename "$PACKAGE_FILENAME" '{files:[
+              "https://packages.timmo.dev/x86_64/\($filename)",
+              "https://packages.timmo.dev/x86_64/\($filename).sig"
+            ]}')" \
+            "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache")"
+          jq -e '.success == true' <<< "$response" >/dev/null

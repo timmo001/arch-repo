@@ -30,6 +30,13 @@ cp -a "$ARCH_REPO_STATE_DIR"/*.pkg.tar.zst \
   "$ARCH_REPO_OUTPUT_DIR/" 2>/dev/null || true
 cp -a "$ARCH_REPO_STATE_DIR"/*.pkg.tar.zst.sig \
   "$ARCH_REPO_OUTPUT_DIR/" 2>/dev/null || true
+for package_file in "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst; do
+  filename="${package_file##*/}"
+  [[ ! -e "$ARCH_REPO_STATE_DIR/$filename" ]] || {
+    printf 'Immutable package filename already exists: %s\n' "$filename" >&2
+    exit 1
+  }
+done
 cp -a "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst \
   "$ARCH_REPO_OUTPUT_DIR/"
 

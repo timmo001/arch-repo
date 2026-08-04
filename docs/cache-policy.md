@@ -8,3 +8,4 @@
 | Current and previous recovery manifests | `public, max-age=60, s-maxage=300, must-revalidate` |
 
 Publication purges only mutable database and recovery-manifest URLs. Immutable package URLs are never purged.
+If an immutable package filename is accidentally reused with different bytes, the manual package-cache purge workflow can repair exactly that package and signature pair after the origin objects are verified.

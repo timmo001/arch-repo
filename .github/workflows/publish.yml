@@ -84,17 +84,81 @@ jobs:
           gh run download "${{ steps.contract.outputs.source_run_id }}" \
             --repo "${{ steps.contract.outputs.source_repository }}" \
             --name "${{ steps.contract.outputs.artifact_name }}" \
-            --dir candidate
+            --dir candidate-artifact
       - name: Validate candidate contents
         run: |
-          shopt -s globstar nullglob
-          candidates=(candidate/**/*.pkg.tar.zst)
-          (( ${#candidates[@]} > 0 )) || {
-            echo "Candidate artifact contains no packages" >&2
+          envelope=candidate-artifact/candidate.tar
+          unexpected="$(find candidate-artifact -mindepth 1 -maxdepth 1 \
+            \( ! -type f -o ! -name 'candidate.tar' \) -print -quit)"
+          [[ -z "$unexpected" && -f "$envelope" ]] || {
+            echo "Candidate artifact must contain only candidate.tar" >&2
             exit 1
           }
+          [[ "$(dd if="$envelope" bs=1 skip=257 count=5 status=none)" == ustar ]] || {
+            echo "Candidate envelope must be an uncompressed tar archive" >&2
+            exit 1
+          }
+
+          mapfile -t members < <(tar --list --file "$envelope" \
+            --quoting-style=escape)
+          (( ${#members[@]} == 2 )) || {
+            echo "Candidate envelope must contain exactly two entries" >&2
+            exit 1
+          }
+          package_name=
+          provenance_found=false
+          for member in "${members[@]}"; do
+            [[ "$member" != /* && "$member" != .. && \
+              "$member" != ../* && "$member" != */../* && \
+              "$member" != */.. ]] || {
+              echo "Candidate envelope contains an unsafe path: $member" >&2
+              exit 1
+            }
+            if [[ "$member" == provenance.json ]]; then
+              [[ "$provenance_found" == false ]] || exit 1
+              provenance_found=true
+            elif [[ "$member" =~ ^[A-Za-z0-9@._+:~-]+\.pkg\.tar\.zst$ ]]; then
+              [[ -z "$package_name" ]] || exit 1
+              package_name="$member"
+            else
+              echo "Candidate envelope contains an unexpected entry: $member" >&2
+              exit 1
+            fi
+          done
+          [[ -n "$package_name" && "$provenance_found" == true ]] || {
+            echo "Candidate envelope must contain one package and provenance.json" >&2
+            exit 1
+          }
+          while IFS= read -r entry; do
+            [[ "$entry" == -* ]] || {
+              echo "Candidate envelope entries must be regular files" >&2
+              exit 1
+            }
+          done < <(tar --list --verbose --file "$envelope" \
+            --quoting-style=escape)
+
+          mkdir -p candidate
+          tar --extract --file "$envelope" --directory candidate \
+            --no-same-owner --no-same-permissions
+          [[ -f "candidate/$package_name" && \
+            ! -L "candidate/$package_name" && \
+            -f candidate/provenance.json && \
+            ! -L candidate/provenance.json ]] || {
+            echo "Candidate envelope did not extract to the validated files" >&2
+            exit 1
+          }
+          jq -e \
+            --slurpfile config config/packages.json \
+            --arg artifact "$package_name" \
+            --arg repository "${{ steps.contract.outputs.source_repository }}" \
+            --arg sha "${{ steps.contract.outputs.source_sha }}" \
+            '.artifact == $artifact and
+              ($config[0].packages[.package].repository == $repository) and
+              .source_repository == $repository and
+              .source_sha == $sha' \
+            candidate/provenance.json >/dev/null
           mkdir -p candidate-packages
-          cp "${candidates[@]}" candidate-packages/
+          cp -- "candidate/$package_name" candidate-packages/
       - name: Install R2 client
         run: pipx install awscli==1.45.63
       - name: Download current repository state

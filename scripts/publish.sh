@@ -39,6 +39,8 @@ for package_file in "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst; do
 done
 cp -a "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst \
   "$ARCH_REPO_OUTPUT_DIR/"
+cp -a "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst.sig \
+  "$ARCH_REPO_OUTPUT_DIR/" 2>/dev/null || true
 
 declare -A allowed=()
 while IFS= read -r package; do
@@ -117,7 +119,11 @@ done
 
 for package_file in "$ARCH_REPO_CANDIDATE_DIR"/*.pkg.tar.zst; do
   package_file="$ARCH_REPO_OUTPUT_DIR/${package_file##*/}"
-  sign_file "$package_file"
+  if [[ -s "$package_file.sig" ]]; then
+    verify_signature "$package_file.sig" "$package_file"
+  else
+    sign_file "$package_file"
+  fi
 done
 
 repo-add --include-sigs "$ARCH_REPO_OUTPUT_DIR/$repository.db.tar.zst" \

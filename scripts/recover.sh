@@ -49,6 +49,7 @@ while IFS=$'\t' read -r filename sha256 signature_name signature_sha256; do
   verify_signature "$ARCH_REPO_STATE_DIR/$signature_name" \
     "$ARCH_REPO_STATE_DIR/$filename"
   cp "$ARCH_REPO_STATE_DIR/$filename" "$ARCH_REPO_CANDIDATE_DIR/"
+  cp "$ARCH_REPO_STATE_DIR/$signature_name" "$ARCH_REPO_CANDIDATE_DIR/"
 done < <(jq -r '.packages[] | select(.active) |
   [.filename,.sha256,.signature,.signatureSha256] | @tsv' "$manifest")
 

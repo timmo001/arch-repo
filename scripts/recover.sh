@@ -57,4 +57,4 @@ empty_state="$(mktemp -d)"
 trap 'rm -rf "$gnupg" "$empty_state"' EXIT
 ARCH_REPO_STATE_DIR="$empty_state" \
 ARCH_REPO_PROVENANCE_MANIFEST="$manifest" \
-  "$ROOT_DIR/scripts/publish.sh"
+  bash "$ROOT_DIR/scripts/publish.sh"

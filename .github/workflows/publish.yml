@@ -133,6 +133,7 @@ jobs:
             --env ARCH_REPO_SOURCE_SHA \
             --env ARCH_REPO_SIGNING_PASSPHRASE \
             --env ARCH_REPO_SIGNING_KEY=/repository/.work/signing-key.asc \
+            --env GITHUB_RUN_ID \
             archlinux:latest \
             bash -euo pipefail -c '
               pacman -Syu --noconfirm --needed gnupg jq pacman-contrib
@@ -205,3 +206,19 @@ jobs:
           jq -e '.success == true' <<< "$response" >/dev/null
       - name: Verify public repository
         run: bash scripts/health-check.sh
+      - name: Prune superseded package objects
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          shopt -s nullglob
+          for file in state/*.pkg.tar.zst state/*.pkg.tar.zst.sig; do
+            filename="${file##*/}"
+            [[ -e "output/$filename" ]] && continue
+            aws s3 rm "s3://$R2_BUCKET/x86_64/$filename" \
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+              --no-progress
+          done

@@ -22,12 +22,12 @@ signature="$manifest.sig"
 }
 
 verify_public_key
-keyring="$(mktemp)"
-trap 'rm -f "$keyring"' EXIT
-gpg --batch --no-default-keyring --keyring "$keyring" \
-  --import "$(public_key_file)" >/dev/null 2>&1
-gpg --batch --no-default-keyring --keyring "$keyring" \
-  --verify "$signature" "$manifest"
+gnupg="$(mktemp -d)"
+trap 'rm -rf "$gnupg"' EXIT
+chmod 0700 "$gnupg"
+export GNUPGHOME="$gnupg"
+gpg --batch --import "$(public_key_file)" >/dev/null 2>&1
+verify_signature "$signature" "$manifest"
 [[ "$(jq -r '.signingFingerprint' "$manifest")" == \
   "$(normalised_fingerprint)" ]] || {
   printf 'Recovery manifest signing fingerprint mismatch\n' >&2
@@ -46,15 +46,14 @@ while IFS=$'\t' read -r filename sha256 signature_name signature_sha256; do
     printf 'Recovery signature checksum mismatch: %s\n' "$signature_name" >&2
     exit 1
   }
-  gpg --batch --no-default-keyring --keyring "$keyring" \
-    --verify "$ARCH_REPO_STATE_DIR/$signature_name" \
+  verify_signature "$ARCH_REPO_STATE_DIR/$signature_name" \
     "$ARCH_REPO_STATE_DIR/$filename"
   cp "$ARCH_REPO_STATE_DIR/$filename" "$ARCH_REPO_CANDIDATE_DIR/"
 done < <(jq -r '.packages[] | select(.active) |
   [.filename,.sha256,.signature,.signatureSha256] | @tsv' "$manifest")
 
 empty_state="$(mktemp -d)"
-trap 'rm -f "$keyring"; rm -rf "$empty_state"' EXIT
+trap 'rm -rf "$gnupg" "$empty_state"' EXIT
 ARCH_REPO_STATE_DIR="$empty_state" \
 ARCH_REPO_PROVENANCE_MANIFEST="$manifest" \
   "$ROOT_DIR/scripts/publish.sh"

@@ -70,6 +70,14 @@ sign_file() {
   fi
 }
 
+verify_signature() {
+  local output
+  if ! output="$(gpg --batch --verify "$1" "$2" 2>&1)"; then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+}
+
 validate_object_key() {
   [[ "$1" =~ ^[A-Za-z0-9._+@/-]+$ && "$1" != /* && "$1" != *".."* ]]
 }

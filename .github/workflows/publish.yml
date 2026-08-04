@@ -219,6 +219,5 @@ jobs:
             filename="${file##*/}"
             [[ -e "output/$filename" ]] && continue
             aws s3 rm "s3://$R2_BUCKET/x86_64/$filename" \
-              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
-              --no-progress
+              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
           done

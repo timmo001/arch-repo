@@ -24,8 +24,10 @@ tar -tf "$work/$repository.db" >/dev/null
 
 curl -fsS "$base_url/recovery/current.json" -o "$work/current.json"
 curl -fsS "$base_url/recovery/current.json.sig" -o "$work/current.json.sig"
-gpg --batch --no-default-keyring --keyring "$work/repository.gpg" --import "$work/key.asc" >/dev/null 2>&1
-gpg --batch --no-default-keyring --keyring "$work/repository.gpg" --verify "$work/current.json.sig" "$work/current.json"
+export GNUPGHOME="$work/gnupg"
+mkdir -m 0700 "$GNUPGHOME"
+gpg --batch --import "$work/key.asc" >/dev/null 2>&1
+verify_signature "$work/current.json.sig" "$work/current.json"
 jq -e --arg repository "$repository" --arg architecture "$architecture" '.repository == $repository and .architecture == $architecture' "$work/current.json" >/dev/null
 jq -e '
   .schemaVersion == 1 and
@@ -73,8 +75,7 @@ while IFS=$'\t' read -r filename sha256 signature active; do
     printf 'Package signature checksum mismatch: %s\n' "$signature" >&2
     exit 1
   }
-  gpg --batch --no-default-keyring --keyring "$work/repository.gpg" \
-    --verify "$work/$signature" "$work/$filename"
+  verify_signature "$work/$signature" "$work/$filename"
 done < <(jq -r '.packages[] | [.filename,.sha256,.signature,(.active|tostring)] | @tsv' "$work/current.json")
 
 printf 'Public repository health check passed\n'

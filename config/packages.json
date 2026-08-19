@@ -10,6 +10,7 @@
     "home-assistant-tui-git": { "repository": "timmo001/home-assistant-tui", "architectures": ["x86_64"] },
     "music-assistant-tui": { "repository": "timmo001/music-assistant-tui", "architectures": ["x86_64"] },
     "music-assistant-tui-git": { "repository": "timmo001/music-assistant-tui", "architectures": ["x86_64"] },
+    "momentumctl": { "repository": "timmo001/omarchy-momentumctl", "architectures": ["x86_64"] },
     "repo-notes-bin": { "repository": "timmo001/notes", "architectures": ["x86_64"] },
     "repo-notes-git": { "repository": "timmo001/notes", "architectures": ["x86_64"] },
     "system-bridge": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] },

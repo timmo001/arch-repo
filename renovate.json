@@ -1,12 +1,4 @@
 {
-  "extends": ["config:recommended"],
-  "dependencyDashboard": true,
-  "minimumReleaseAge": "2 days",
-  "packageRules": [
-    {
-      "matchManagers": ["github-actions"],
-      "groupName": "GitHub Actions",
-      "pinDigests": true
-    }
-  ]
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>timmo001/renovate-config"]
 }

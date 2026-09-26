@@ -47,7 +47,7 @@ jobs:
             echo "Waiting for an earlier publish"
             sleep 15
           done
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Validate dispatch contract
         id: contract
         env:

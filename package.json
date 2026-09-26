@@ -1,7 +1,7 @@
 {
   "name": "@timmo001/arch-repo",
   "private": true,
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@10.34.5",
   "engines": { "node": ">=22.12.0" },
   "scripts": {
     "check": "node scripts/validate-config.mjs && bash scripts/validate.sh",

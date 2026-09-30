@@ -11,6 +11,6 @@
     "provision:apply": "bash scripts/provision.sh --apply"
   },
   "devDependencies": {
-    "wrangler": "^4.111.0"
+    "wrangler": "4.143.0"
   }
 }

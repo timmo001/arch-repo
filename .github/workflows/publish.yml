@@ -86,6 +86,7 @@ jobs:
             --name "${{ steps.contract.outputs.artifact_name }}" \
             --dir candidate-artifact
       - name: Validate candidate contents
+        id: candidate
         run: |
           envelope=candidate-artifact/candidate.tar
           unexpected="$(find candidate-artifact -mindepth 1 -maxdepth 1 \
@@ -159,6 +160,23 @@ jobs:
             candidate/provenance.json >/dev/null
           mkdir -p candidate-packages
           cp -- "candidate/$package_name" candidate-packages/
+          {
+            echo "file=$package_name"
+            echo "package=$(jq -r .package candidate/provenance.json)"
+          } >> "$GITHUB_OUTPUT"
+      - name: Start source deployment
+        id: deployment
+        continue-on-error: true
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@a7b34d53ef8f83b1763fd0d3257a0168416e23ab # 20261001.2
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_DEPLOYMENT_TOKEN }}
+        with:
+          stage: start
+          sourceRepository: ${{ steps.contract.outputs.source_repository }}
+          sourceSha: ${{ steps.contract.outputs.source_sha }}
+          packageName: ${{ steps.candidate.outputs.package }}
+          packageFile: ${{ steps.candidate.outputs.file }}
       - name: Install R2 client
         run: pipx install awscli==1.45.63
       - name: Download current repository state
@@ -285,3 +303,16 @@ jobs:
             aws s3 rm "s3://$R2_BUCKET/x86_64/$filename" \
               --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
           done
+      - name: Finish source deployment
+        if: always() && steps.deployment.outputs.deployment-id != ''
+        continue-on-error: true
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@a7b34d53ef8f83b1763fd0d3257a0168416e23ab # 20261001.2
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_DEPLOYMENT_TOKEN }}
+        with:
+          stage: finish
+          sourceRepository: ${{ steps.contract.outputs.source_repository }}
+          deploymentId: ${{ steps.deployment.outputs.deployment-id }}
+          environmentUrl: ${{ steps.deployment.outputs.environment-url }}
+          jobStatus: ${{ job.status }}

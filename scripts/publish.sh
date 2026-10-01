@@ -69,7 +69,8 @@ for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
   }
   pkgname="$(package_field "$package_file" pkgname)"
   pkgarch="$(package_field "$package_file" arch)"
-  [[ -n "${allowed[$pkgname]:-}" ]] || {
+  # Stored files of a removed package stay as inactive recovery material.
+  [[ -n "${allowed[$pkgname]:-}" || ! -e "$ARCH_REPO_CANDIDATE_DIR/$filename" ]] || {
     printf 'Unexpected package identity: %s\n' "$pkgname" >&2
     exit 1
   }
@@ -156,6 +157,9 @@ for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
       '.packages[] | select(.filename == $filename) | .sourceSha' \
       "$provenance_manifest")"
     [[ -z "$retained_source_sha" ]] || source_sha="$retained_source_sha"
+    [[ "$source_repository" != null ]] || source_repository="$(jq -r --arg filename "$filename" \
+      '.packages[] | select(.filename == $filename) | .sourceRepository' \
+      "$provenance_manifest")"
   fi
   entry="$(jq -n \
     --arg pkgname "$pkgname" --arg pkgver "$pkgver" --arg arch "$pkgarch" \

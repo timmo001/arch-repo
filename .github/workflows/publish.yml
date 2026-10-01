@@ -170,7 +170,7 @@ jobs:
         # yamllint disable-line rule:line-length
         uses: timmo001/workflows/.github/actions/arch-source-deployment@a7b34d53ef8f83b1763fd0d3257a0168416e23ab # 20261001.2
         env:
-          GH_TOKEN: ${{ secrets.SOURCE_DEPLOYMENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:
           stage: start
           sourceRepository: ${{ steps.contract.outputs.source_repository }}
@@ -309,7 +309,7 @@ jobs:
         # yamllint disable-line rule:line-length
         uses: timmo001/workflows/.github/actions/arch-source-deployment@a7b34d53ef8f83b1763fd0d3257a0168416e23ab # 20261001.2
         env:
-          GH_TOKEN: ${{ secrets.SOURCE_DEPLOYMENT_TOKEN }}
+          GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:
           stage: finish
           sourceRepository: ${{ steps.contract.outputs.source_repository }}

@@ -15,6 +15,7 @@
     "repo-notes-git": { "repository": "timmo001/notes", "architectures": ["x86_64"] },
     "system-bridge": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] },
     "system-bridge-git": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] },
-    "twitch-notifications-git": { "repository": "timmo001/twitch-notifications", "architectures": ["x86_64"] }
+    "upnext-bin": { "repository": "timmo001/upnext", "architectures": ["x86_64"] },
+    "upnext-git": { "repository": "timmo001/upnext", "architectures": ["x86_64"] }
   }
 }

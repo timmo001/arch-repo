@@ -1,5 +1,7 @@
 ---
 name: Publish package
+run-name: >-
+  Publish ${{ github.event.client_payload.package || github.event.client_payload.artifact_name || inputs.artifact-name }}
 
 # yamllint disable-line rule:truthy
 on:
@@ -232,6 +234,8 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           for file in output/*.pkg.tar.zst output/*.pkg.tar.zst.sig; do
+            # Packages carried over from the current state are already stored.
+            [[ -e "state/${file##*/}" ]] && continue
             aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/${file##*/}" \
               --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
               --cache-control "public, max-age=31536000, immutable" \

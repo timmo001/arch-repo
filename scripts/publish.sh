@@ -47,28 +47,25 @@ while IFS= read -r package; do
   allowed["$package"]=1
 done < <(jq -r '.packages | keys[]' "$PACKAGE_CONFIG")
 
-package_field() {
-  tar -xOf "$1" .PKGINFO | awk -v field="$2" '$1 == field { print $3; exit }'
+pkginfo_field() {
+  awk -v field="$2" '$1 == field { print $3; exit }' <<< "$1"
 }
 
-package_version() {
-  local epoch pkgver pkgrel
-  epoch="$(package_field "$1" epoch)"
-  pkgver="$(package_field "$1" pkgver)"
-  pkgrel="$(package_field "$1" pkgrel)"
-  [[ -z "$epoch" || "$epoch" == 0 ]] \
-    && printf '%s-%s\n' "$pkgver" "$pkgrel" \
-    || printf '%s:%s-%s\n' "$epoch" "$pkgver" "$pkgrel"
-}
-
+# Each .PKGINFO is read once: extracting it means decompressing the package.
+declare -A package_names=() package_arches=() package_versions=()
 for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
   filename="${package_file##*/}"
   [[ "$filename" != *-debug-* ]] || {
     printf 'Debug package rejected: %s\n' "$filename" >&2
     exit 1
   }
-  pkgname="$(package_field "$package_file" pkgname)"
-  pkgarch="$(package_field "$package_file" arch)"
+  pkginfo="$(tar -xOf "$package_file" .PKGINFO)"
+  pkgname="$(pkginfo_field "$pkginfo" pkgname)"
+  pkgarch="$(pkginfo_field "$pkginfo" arch)"
+  package_names["$package_file"]="$pkgname"
+  package_arches["$package_file"]="$pkgarch"
+  # .PKGINFO pkgver already includes the epoch and pkgrel.
+  package_versions["$package_file"]="$(pkginfo_field "$pkginfo" pkgver)"
   # Stored files of a removed package stay as inactive recovery material.
   [[ -n "${allowed[$pkgname]:-}" || ! -e "$ARCH_REPO_CANDIDATE_DIR/$filename" ]] || {
     printf 'Unexpected package identity: %s\n' "$pkgname" >&2
@@ -85,9 +82,9 @@ while IFS= read -r pkgname; do
   selected=()
   while IFS= read -r package_file; do
     inserted=false
-    version="$(package_version "$package_file")"
+    version="${package_versions[$package_file]}"
     for index in "${!selected[@]}"; do
-      selected_version="$(package_version "${selected[$index]}")"
+      selected_version="${package_versions[${selected[$index]}]}"
       if [[ "$(vercmp "$version" "$selected_version")" -gt 0 ]]; then
         selected=("${selected[@]:0:$index}" "$package_file" "${selected[@]:$index}")
         inserted=true
@@ -97,7 +94,7 @@ while IFS= read -r pkgname; do
     [[ "$inserted" == true ]] || selected+=("$package_file")
   done < <(
     for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
-      [[ "$(package_field "$package_file" pkgname)" == "$pkgname" ]] \
+      [[ "${package_names[$package_file]}" == "$pkgname" ]] \
         && printf '%s\n' "$package_file"
     done
   )
@@ -143,9 +140,9 @@ manifest_packages='[]'
 provenance_manifest="${ARCH_REPO_PROVENANCE_MANIFEST:-$ARCH_REPO_STATE_DIR/recovery/current.json}"
 for package_file in "$ARCH_REPO_OUTPUT_DIR"/*.pkg.tar.zst; do
   filename="${package_file##*/}"
-  pkgname="$(package_field "$package_file" pkgname)"
-  pkgver="$(package_version "$package_file")"
-  pkgarch="$(package_field "$package_file" arch)"
+  pkgname="${package_names[$package_file]}"
+  pkgver="${package_versions[$package_file]}"
+  pkgarch="${package_arches[$package_file]}"
   active=false
   for active_file in "${active_files[@]}"; do
     [[ "$active_file" != "$package_file" ]] || active=true

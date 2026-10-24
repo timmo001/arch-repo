@@ -170,7 +170,7 @@ jobs:
         id: deployment
         continue-on-error: true
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/arch-source-deployment@996dd60d03b12f28b482074a9eed7083a18e2439 # 20261013.1
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@6e3616d0d48c9c8ed9865b648107140b99b16551 # 20261024.0
         env:
           GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:
@@ -311,7 +311,7 @@ jobs:
         if: always() && steps.deployment.outputs.deployment-id != ''
         continue-on-error: true
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/arch-source-deployment@996dd60d03b12f28b482074a9eed7083a18e2439 # 20261013.1
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@6e3616d0d48c9c8ed9865b648107140b99b16551 # 20261024.0
         env:
           GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:

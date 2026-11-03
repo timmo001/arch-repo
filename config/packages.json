@@ -19,6 +19,7 @@
     "system-bridge-git": { "repository": "timmo001/system-bridge", "architectures": ["x86_64"] },
     "triage-bin": { "repository": "timmo001/triage", "architectures": ["x86_64"] },
     "triage-git": { "repository": "timmo001/triage", "architectures": ["x86_64"] },
+    "upkeep-git": { "repository": "timmo001/upkeep", "architectures": ["x86_64"] },
     "upnext-bin": { "repository": "timmo001/upnext", "architectures": ["x86_64"] },
     "upnext-git": { "repository": "timmo001/upnext", "architectures": ["x86_64"] }
   }

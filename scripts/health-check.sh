@@ -14,16 +14,20 @@ base_url="https://$hostname/$architecture"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-curl -fsS "https://$hostname/timmo-arch-repo.asc" -o "$work/key.asc"
-curl -fsS "https://$hostname/FINGERPRINT" -o "$work/FINGERPRINT"
+fetch() {
+  curl -fsS --retry 3 --retry-delay 2 --retry-all-errors "$@"
+}
+
+fetch "https://$hostname/timmo-arch-repo.asc" -o "$work/key.asc"
+fetch "https://$hostname/FINGERPRINT" -o "$work/FINGERPRINT"
 cmp -s "$work/key.asc" "$(public_key_file)" || { printf 'Published key differs from Git source\n' >&2; exit 1; }
 [[ "$(tr -d '[:space:]' < "$work/FINGERPRINT")" == "$(normalised_fingerprint)" ]] || { printf 'Published fingerprint differs from Git source\n' >&2; exit 1; }
 
-curl -fsS "$base_url/$repository.db" -o "$work/$repository.db"
+fetch "$base_url/$repository.db" -o "$work/$repository.db"
 tar -tf "$work/$repository.db" >/dev/null
 
-curl -fsS "$base_url/recovery/current.json" -o "$work/current.json"
-curl -fsS "$base_url/recovery/current.json.sig" -o "$work/current.json.sig"
+fetch "$base_url/recovery/current.json" -o "$work/current.json"
+fetch "$base_url/recovery/current.json.sig" -o "$work/current.json.sig"
 export GNUPGHOME="$work/gnupg"
 mkdir -m 0700 "$GNUPGHOME"
 gpg --batch --import "$work/key.asc" >/dev/null 2>&1
@@ -64,8 +68,8 @@ cmp -s "$database_packages" "$manifest_packages" || {
 
 while IFS=$'\t' read -r filename sha256 signature active; do
   [[ "$active" == true ]] || continue
-  curl -fsS "$base_url/$filename" -o "$work/$filename"
-  curl -fsS "$base_url/$signature" -o "$work/$signature"
+  fetch "$base_url/$filename" -o "$work/$filename"
+  fetch "$base_url/$signature" -o "$work/$signature"
   [[ "$(sha256_file "$work/$filename")" == "$sha256" ]] || {
     printf 'Package checksum mismatch: %s\n' "$filename" >&2
     exit 1

@@ -5,13 +5,9 @@ The repository overlays the same package names maintained through AUR, so
 `-git`, `-bin`, and un-suffixed channels keep their existing meaning. AUR
 remains an independent source-build fallback.
 
-The repository is not live until R2, the signing key, and the initial empty
-database have been provisioned.
-
 ## Client configuration
 
-Verify the full fingerprint in `keys/FINGERPRINT` before trusting the key. The
-file is intentionally absent until the key ceremony is complete.
+Verify the full fingerprint in `keys/FINGERPRINT` before trusting the key.
 
 ```bash
 curl -fsSLO https://packages.timmo.dev/timmo-arch-repo.asc

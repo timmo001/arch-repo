@@ -1,0 +1,40 @@
+# The repository's pinned tools and tasks. pnpm runs the validation scripts; the
+# hk pre-push hook runs the shared lints.
+min_version = "2025.1.0"
+
+[tools]
+node = "26.13.1"
+"npm:pnpm" = "12.21.0"
+"npm:prettier" = "3.10.1"
+jq = "1.8.2"
+shellcheck = "0.11.0"
+hk = "2.12.0"
+# The linters the shared hk pre-push hook runs, matching CI.
+uv = "0.13.8"
+python = "3.14.10"
+"pipx:yamllint" = "1.38.0"
+"npm:markdownlint-cli2" = "0.24.1"
+actionlint = "1.7.12"
+
+[tasks.install]
+description = "Install dependencies"
+run = "pnpm install --frozen-lockfile"
+
+[tasks.format]
+description = "Format the repository's Markdown, JSON and YAML"
+depends = ["install"]
+run = "prettier --write ."
+
+[tasks."format:check"]
+description = "Check formatting without writing"
+depends = ["install"]
+run = "prettier --check ."
+
+[tasks.lint]
+description = "Run the shared hk lints over every file"
+run = "hk check --all"
+
+[tasks.check]
+description = "Validate the config and scripts, verify formatting and run the shared lints"
+depends = ["format:check", "lint"]
+run = "pnpm check"

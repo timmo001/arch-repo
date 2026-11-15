@@ -1,0 +1,7 @@
+// Pre-push checks: the shared base from timmo001/workflows. Run them by hand
+// with `hk check --all`.
+amends "package://github.com/timmo001/workflows/releases/download/20261114.0/hk-base@20261114.0.0#/base.pkl"
+
+// Shared skills are synced copies owned by the skills repository, and .mise
+// holds the locks mise generates.
+exclude = List(".agents/skills", ".mise")

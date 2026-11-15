@@ -1,7 +1,9 @@
 ---
 name: Publish package
+# yamllint disable rule:line-length
 run-name: >-
   Publish ${{ github.event.client_payload.package || github.event.client_payload.artifact_name || inputs.artifact-name }}
+# yamllint enable rule:line-length
 
 # yamllint disable-line rule:truthy
 on:
@@ -226,7 +228,7 @@ jobs:
             '
           rm -f "$ARCH_REPO_SIGNING_KEY"
       - name: Upload immutable packages first
-        env: &r2
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto

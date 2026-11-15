@@ -182,6 +182,9 @@ aube = { path = ".mise/locks/npm-pnpm/12.21.0", digest = "sha256:88abd0fe69fc177
 backend = "npm:pnpm"
 specifiers = ["12.21.0"]
 
+[tools."npm:pnpm".provenance]
+repository = "github.com/pnpm/pnpm"
+
 [[tools."npm:prettier"]]
 version = "3.10.1"
 aube = { path = ".mise/locks/npm-prettier/3.10.1", digest = "sha256:2d1e8d35e9c42e9df167e305f2f8d5fc6fa8ab982cf1070a7e5148d73b5c5534" }

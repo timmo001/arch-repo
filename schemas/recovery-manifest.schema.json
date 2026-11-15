@@ -2,7 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "repository", "architecture", "generatedAt", "signingFingerprint", "packages"],
+  "required": [
+    "schemaVersion",
+    "repository",
+    "architecture",
+    "generatedAt",
+    "signingFingerprint",
+    "packages"
+  ],
   "properties": {
     "schemaVersion": { "const": 1 },
     "repository": { "const": "timmo" },
@@ -15,7 +22,18 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["pkgname", "pkgver", "arch", "filename", "sha256", "signature", "signatureSha256", "active", "sourceRepository", "sourceSha"],
+        "required": [
+          "pkgname",
+          "pkgver",
+          "arch",
+          "filename",
+          "sha256",
+          "signature",
+          "signatureSha256",
+          "active",
+          "sourceRepository",
+          "sourceSha"
+        ],
         "properties": {
           "pkgname": { "pattern": "^[a-z0-9@_+][a-z0-9@._+-]*$" },
           "pkgver": { "type": "string", "minLength": 1 },

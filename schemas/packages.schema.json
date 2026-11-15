@@ -14,7 +14,10 @@
         "additionalProperties": false,
         "required": ["repository", "architectures"],
         "properties": {
-          "repository": { "type": "string", "pattern": "^timmo001/[A-Za-z0-9._-]+$" },
+          "repository": {
+            "type": "string",
+            "pattern": "^timmo001/[A-Za-z0-9._-]+$"
+          },
           "architectures": {
             "type": "array",
             "items": { "enum": ["x86_64"] },

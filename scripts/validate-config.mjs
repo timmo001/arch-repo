@@ -27,7 +27,8 @@ for (const [name, config] of Object.entries(packages.packages ?? {})) {
   }
 }
 
-const lifecycleCondition = lifecycle.rules?.[0]?.abortMultipartUploadsTransition?.condition;
+const lifecycleCondition =
+  lifecycle.rules?.[0]?.abortMultipartUploadsTransition?.condition;
 if (lifecycleCondition?.type !== "Age" || lifecycleCondition.maxAge !== 86400) {
   throw new Error("Invalid incomplete multipart upload lifecycle rule");
 }

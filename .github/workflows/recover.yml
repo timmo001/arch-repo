@@ -23,20 +23,18 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Install R2 client
-        run: pipx install awscli==1.45.63
       - name: Download repository state
-        env: &r2
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: |
-          mkdir -p state
-          aws s3 sync "s3://$R2_BUCKET/x86_64/" state/ \
-            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
-            --no-progress
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: sync
+          direction: down
+          local-path: state/
+          remote-path: x86_64/
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
       - name: Prepare signed recovery state
         env:
           ARCH_REPO_SIGNING_KEY: ${{ github.workspace }}/.work/signing-key.asc
@@ -44,7 +42,7 @@ jobs:
           MANIFEST: ${{ inputs.manifest }}
           SIGNING_KEY: ${{ secrets.ARCH_REPO_SIGNING_KEY }}
         run: |
-          mkdir -p .work
+          mkdir -p .work state
           printf '%s\n' "$SIGNING_KEY" > "$ARCH_REPO_SIGNING_KEY"
           chmod 0600 "$ARCH_REPO_SIGNING_KEY"
           docker run --rm \
@@ -65,50 +63,100 @@ jobs:
             '
           rm -f "$ARCH_REPO_SIGNING_KEY"
       - name: Upload verified package objects
-        env: *r2
-        run: |
-          for file in output/*.pkg.tar.zst output/*.pkg.tar.zst.sig; do
-            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/${file##*/}" \
-              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
-              --cache-control "public, max-age=31536000, immutable" \
-              --no-progress
-          done
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          recursive: "true"
+          local-path: output/
+          remote-path: x86_64/
+          filters: |
+            exclude *
+            include *.pkg.tar.zst
+            include *.pkg.tar.zst.sig
+          cache-control: public, max-age=31536000, immutable
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
       - name: Upload current recovery manifest
-        env: *r2
-        run: |
-          for file in output/recovery/current.json output/recovery/current.json.sig; do
-            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/recovery/${file##*/}" \
-              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
-              --cache-control "public, max-age=60, s-maxage=300, must-revalidate" \
-              --no-progress
-          done
-      - name: Upload repository database last
-        env: *r2
-        run: |
-          for file in output/timmo.files.tar.zst output/timmo.files output/timmo.db.tar.zst output/timmo.db; do
-            aws s3 cp "$file" "s3://$R2_BUCKET/x86_64/${file##*/}" \
-              --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
-              --cache-control "public, max-age=60, s-maxage=300, must-revalidate" \
-              --no-progress
-          done
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          recursive: "true"
+          local-path: output/recovery/
+          remote-path: x86_64/recovery/
+          filters: |
+            exclude *
+            include current.json
+            include current.json.sig
+          cache-control: public, max-age=60, s-maxage=300, must-revalidate
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+      # One step per file keeps the database last, after what it lists
+      - name: Upload timmo.files.tar.zst
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          local-path: output/timmo.files.tar.zst
+          remote-path: x86_64/timmo.files.tar.zst
+          cache-control: public, max-age=60, s-maxage=300, must-revalidate
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+      - name: Upload timmo.files
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          local-path: output/timmo.files
+          remote-path: x86_64/timmo.files
+          cache-control: public, max-age=60, s-maxage=300, must-revalidate
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+      - name: Upload timmo.db.tar.zst
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          local-path: output/timmo.db.tar.zst
+          remote-path: x86_64/timmo.db.tar.zst
+          cache-control: public, max-age=60, s-maxage=300, must-revalidate
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
+      - name: Upload timmo.db
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/r2-objects@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          command: cp
+          local-path: output/timmo.db
+          remote-path: x86_64/timmo.db
+          cache-control: public, max-age=60, s-maxage=300, must-revalidate
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          bucket: ${{ secrets.R2_BUCKET }}
       - name: Purge mutable repository URLs
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
-        run: |
-          response="$(curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            --header 'Content-Type: application/json' \
-            --data '{"files":[
-              "https://packages.timmo.dev/x86_64/timmo.db",
-              "https://packages.timmo.dev/x86_64/timmo.db.tar.zst",
-              "https://packages.timmo.dev/x86_64/timmo.files",
-              "https://packages.timmo.dev/x86_64/timmo.files.tar.zst",
-              "https://packages.timmo.dev/x86_64/recovery/current.json",
-              "https://packages.timmo.dev/x86_64/recovery/current.json.sig"
-            ]}' \
-            "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache")"
-          jq -e '.success == true' <<< "$response" >/dev/null
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          zone-id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          api-token: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
+          files: |
+            https://packages.timmo.dev/x86_64/timmo.db
+            https://packages.timmo.dev/x86_64/timmo.db.tar.zst
+            https://packages.timmo.dev/x86_64/timmo.files
+            https://packages.timmo.dev/x86_64/timmo.files.tar.zst
+            https://packages.timmo.dev/x86_64/recovery/current.json
+            https://packages.timmo.dev/x86_64/recovery/current.json.sig
       - name: Verify public repository
         run: bash scripts/health-check.sh

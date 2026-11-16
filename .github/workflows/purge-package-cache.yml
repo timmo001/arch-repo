@@ -24,18 +24,11 @@ jobs:
         run: |
           [[ "$PACKAGE_FILENAME" =~ ^[A-Za-z0-9@._+:-]+\.pkg\.tar\.zst$ ]]
       - name: Purge package and signature URLs
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
-          PACKAGE_FILENAME: ${{ inputs.package-filename }}
-        run: |
-          response="$(curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            --header 'Content-Type: application/json' \
-            --data "$(jq -cn --arg filename "$PACKAGE_FILENAME" '{files:[
-              "https://packages.timmo.dev/x86_64/\($filename)",
-              "https://packages.timmo.dev/x86_64/\($filename).sig"
-            ]}')" \
-            "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache")"
-          jq -e '.success == true' <<< "$response" >/dev/null
+        # yamllint disable-line rule:line-length
+        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@5451f6867a5cb2b9b6318a82e00f7dd9f9fc279a # 20261116.0
+        with:
+          zone-id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          api-token: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
+          files: |
+            https://packages.timmo.dev/x86_64/${{ inputs.package-filename }}
+            https://packages.timmo.dev/x86_64/${{ inputs.package-filename }}.sig

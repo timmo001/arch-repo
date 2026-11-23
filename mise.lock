@@ -53,6 +53,7 @@ provenance = "github-attestations"
 version = "2.13.0"
 backend = "packslip:github.com/jdx/hk"
 specifiers = ["2.13.0"]
+unsupported_platforms = ["macos-x64"]
 
 [tools.hk."platforms.linux-arm64"]
 checksum = "sha256:490196a4e638991c671f42941d72ade4d00b14750145f34fc64377b49fc070bb"
@@ -177,10 +178,10 @@ backend = "npm:markdownlint-cli2"
 specifiers = ["0.24.2"]
 
 [[tools."npm:pnpm"]]
-version = "12.21.0"
-aube = { path = ".mise/locks/npm-pnpm/12.21.0", digest = "sha256:88abd0fe69fc177b866bb73c9c177ab27608ddb2e28e57cc29ba4b110b6d7c8b" }
+version = "12.23.0"
+aube = { path = ".mise/locks/npm-pnpm/12.23.0", digest = "sha256:3a164eda522b40c4ca764f1dbbf4adaeae193d500ab6cc43a831753d29714bc2" }
 backend = "npm:pnpm"
-specifiers = ["12.21.0"]
+specifiers = ["12.23.0"]
 
 [tools."npm:pnpm".provenance]
 repository = "github.com/pnpm/pnpm"

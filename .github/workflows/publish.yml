@@ -172,7 +172,7 @@ jobs:
         id: deployment
         continue-on-error: true
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/arch-source-deployment@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         env:
           GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:
@@ -183,7 +183,7 @@ jobs:
           packageFile: ${{ steps.candidate.outputs.file }}
       - name: Download current repository state
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: sync
           direction: down
@@ -250,7 +250,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       - name: Upload immutable packages first
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           recursive: "true"
@@ -264,7 +264,7 @@ jobs:
           bucket: ${{ secrets.R2_BUCKET }}
       - name: Upload recovery manifests
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           recursive: "true"
@@ -278,7 +278,7 @@ jobs:
       # One step per file keeps the database last, after what it lists
       - name: Upload timmo.files.tar.zst
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           local-path: output/timmo.files.tar.zst
@@ -290,7 +290,7 @@ jobs:
           bucket: ${{ secrets.R2_BUCKET }}
       - name: Upload timmo.files
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           local-path: output/timmo.files
@@ -302,7 +302,7 @@ jobs:
           bucket: ${{ secrets.R2_BUCKET }}
       - name: Upload timmo.db.tar.zst
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           local-path: output/timmo.db.tar.zst
@@ -314,7 +314,7 @@ jobs:
           bucket: ${{ secrets.R2_BUCKET }}
       - name: Upload timmo.db
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: cp
           local-path: output/timmo.db
@@ -326,7 +326,7 @@ jobs:
           bucket: ${{ secrets.R2_BUCKET }}
       - name: Purge mutable repository URLs
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           zone-id: ${{ vars.CLOUDFLARE_ZONE_ID }}
           api-token: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}
@@ -343,7 +343,7 @@ jobs:
         run: bash scripts/health-check.sh
       - name: Prune superseded package objects
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/r2-objects@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/r2-objects@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           command: rm
           recursive: "true"
@@ -357,7 +357,7 @@ jobs:
         if: always() && steps.deployment.outputs.deployment-id != ''
         continue-on-error: true
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/arch-source-deployment@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/arch-source-deployment@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         env:
           GH_TOKEN: ${{ secrets.SOURCE_ARTIFACT_TOKEN }}
         with:

@@ -25,7 +25,7 @@ jobs:
           [[ "$PACKAGE_FILENAME" =~ ^[A-Za-z0-9@._+:-]+\.pkg\.tar\.zst$ ]]
       - name: Purge package and signature URLs
         # yamllint disable-line rule:line-length
-        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@db6f3692a31de24d2bee17e505dfd2bf3fd5a076 # 20261116.1
+        uses: timmo001/workflows/.github/actions/cloudflare-purge-cache@5ca45f8d789b67b2c3c14aea6062a379d6c37db1 # 20261123.0
         with:
           zone-id: ${{ vars.CLOUDFLARE_ZONE_ID }}
           api-token: ${{ secrets.CLOUDFLARE_CACHE_PURGE_TOKEN }}

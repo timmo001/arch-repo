@@ -10,7 +10,7 @@ jq = "1.8.2"
 shellcheck = "0.11.0"
 hk = "2.14.0"
 # The linters the shared hk pre-push hook runs, matching CI.
-uv = "0.13.9"
+uv = "0.13.10"
 python = "3.14.10"
 "pipx:yamllint" = "1.38.0"
 "npm:markdownlint-cli2" = "0.24.2"
